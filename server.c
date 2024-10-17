@@ -1,14 +1,4 @@
-/*
-===========================================================================================
-Name : ss34.c
-Author : Dhruva Sharma
-Description : Write a program to create a concurrent server
-a. use fork
-b. use pthread_reate
-Output:
 
-============================================================================================
-*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
