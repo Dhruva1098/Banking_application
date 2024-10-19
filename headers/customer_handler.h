@@ -7,7 +7,7 @@ typedef struct {
   int account_id;
   char name[50];
   float balance;
-  char password_hash[65];
+  unsigned long password_hash[65];
 } customerRecord;
 
 int login_customer(int connfd, int* account_id);

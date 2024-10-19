@@ -51,10 +51,68 @@ void view_account_balance(int connfd, int account_id) {
   int balance;
   if (fetch_account_balance(account_id, &balance) == 0) {
     char response[100];
-    snprintf(response, sizeof(response), "Your balance is: %d\n", balance);
+  snprintf(response, sizeof(response), "Your balance is: %d\n", balance);
     write(connfd, response, strlen(response));
   } else {
     char response[] = "Unable to fetch your balance \n";
     write(connfd, response, strlen(response));
+  }
+}
+
+int auth_customer(int connfd, int *account_id) {
+  char buffer[250];
+  char username[50], password[50];
+  unsigned long password_hash;
+  // accouint id
+  write(connfd, "Enter account ID: ", 18);
+  read(connfd, buffer, sizeof(buffer));
+  *account_id = atoi(buffer);
+  // password
+  write(connfd, "Enter password: ", 16);
+  read(connfd, password, sizeof(password));
+  password_hash = hash_password(password);
+  int fd = open(DB_PATH, O_RDWR);
+  if (fd < 0) {
+    return -1;
+  }
+  customerRecord record;
+  lseek(fd, sizeof(customerRecord) * (*account_id), SEEK_SET);
+  read(fd, &record, sizeof(customerRecord));
+  close(fd);
+  if(record.password_hash == password_hash) {
+    return 0;
+  } else return -1;
+}
+int login_customer(int connfd, int *account_id) {
+  if (auth_customer(connfd, account_id) == 0) {
+    char msg[] = "successfully logged in\n";
+    write(connfd, msg, strlen(msg));
+    return 0;
+  } else {
+    char msg[] = "Invalid credentials\n";
+    write(connfd, msg, strlen(msg));
+    return -1;
+  }
+}
+void customer_handler(int connfd){
+  int account_id;
+  if (login_customer(connfd, &account_id) != 0) {
+    return;
+  }
+  char menu[] = "1. View account balance\n2. Exit\n";
+  char choice[2];
+  while(1) {
+    write(connfd, menu, strlen(menu));
+    read(connfd, choice, sizeof(choice));
+    switch(choice[0]) {
+      case '1':
+        view_account_balance(connfd, account_id);
+        break;
+      case '2':
+        write(connfd, "Exiting\n", 9);
+        return;
+      default:
+        write(connfd, "Invalid choice, try again.\n", 27);
+    }
   }
 }
