@@ -1,4 +1,4 @@
-// customer_handler.c
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -87,8 +87,51 @@ int get_customer_info(int account_id, char* buffer, size_t buffer_size) {
     fclose(file); // Close the file if customer is not found
     return 0; // Customer not found
 }
+
+int withdraw_money(int account_id, double amount) {
+    FILE* file = fopen("../database/customer_db.txt", "r+");
+    if (file == NULL) {
+        return 0; // File opening failed
+    }
+    char line[256];
+    int file_account_id;
+    char password[50], customer_name[50], loan_status[20];
+    double bank_balance;
+    long int position;
+    FILE* temp_file = fopen("../database/temp_db.txt", "w");
+    if (temp_file == NULL) {
+        fclose(file);
+        return 0; // Temporary file creation failed
+    }
+    int account_found = 0;
+    while (fgets(line, sizeof(line), file)) {
+        sscanf(line, "%d,%49[^,],%49[^,],%lf,%19[^\n]", &file_account_id, password, customer_name, &bank_balance, loan_status);
+        if (file_account_id == account_id) {
+            if (bank_balance >= amount) {
+                bank_balance -= amount; // Subtract the amount from the balance
+                account_found = 1;
+            } else {
+                fclose(file);
+                fclose(temp_file);
+                remove("../database/temp_db.txt"); // Cleanup
+                return -1; // Insufficient funds
+            }
+        }
+        fprintf(temp_file, "%d,%s,%s,%.2f,%s\n", file_account_id, password, customer_name, bank_balance, loan_status);
+    }
+    fclose(file);
+    fclose(temp_file);
+    if (!account_found) {
+        remove("../database/temp_db.txt"); // Cleanup if account not found
+        return 0; // Account not found
+    }
+    remove("../database/customer_db.txt");
+    rename("../database/temp_db.txt", "../database/customer_db.txt");
+    return 1; // Withdrawal successful
+}
 void cust_logged_in(int ac, int new_socket){
   char cust_buffer[1024] = {0};
+  double amt; int ac2;
   strcpy(cust_buffer, "LOGIN_SUCCESS");
   send(new_socket, cust_buffer, strlen(cust_buffer),0);
   memset(cust_buffer, 0, sizeof(cust_buffer));
@@ -99,8 +142,33 @@ void cust_logged_in(int ac, int new_socket){
     case 1:
       get_customer_info(ac, cust_buffer, sizeof(cust_buffer));
       send(new_socket, cust_buffer, strlen(cust_buffer), 0);
-      printf("sentcustomer info");
+      memset(cust_buffer, 0, sizeof(cust_buffer));
       break;
+    case 2:
+      strcpy(cust_buffer, "GET_AMMOUNT");
+      send(new_socket, cust_buffer, strlen(cust_buffer), 0);
+      read(new_socket, &amt, sizeof(amt));
+      withdraw_money(ac, amt);
+      memset(cust_buffer, 0, sizeof(cust_buffer));
+      break;
+    case 3:
+      strcpy(cust_buffer, "GET_AMMOUNT");
+      send(new_socket, cust_buffer, strlen(cust_buffer), 0);
+      read(new_socket, &amt, sizeof(amt));
+      withdraw_money(ac, amt*-1);
+      memset(cust_buffer, 0, sizeof(cust_buffer));
+      break;
+    case 4:
+      strcpy(cust_buffer, "TRANSFER");
+      send(new_socket, cust_buffer, strlen(cust_buffer), 0);
+      read(new_socket, &amt, sizeof(amt));
+      read(new_socket, &ac2, sizeof(ac2));
+      withdraw_money(ac, amt);
+      withdraw_money(ac2, amt*-1);
+      memset(cust_buffer, 0, sizeof(cust_buffer));
+      break;
+      
+
     default:
       printf("nothing done");
       break;
@@ -145,3 +213,4 @@ void handle_customer(int new_socket) {
     }
     send(new_socket, buffer, strlen(buffer), 0);
 }
+

@@ -22,7 +22,6 @@ void choose(int sock){
   int choicet;
   scanf("%d", &choicet);
   send(sock, &choicet, sizeof(choicet), 0);
-  printf("choice sent to server\n");
 }
 
 int main() {
@@ -101,6 +100,15 @@ int main() {
         printf("Enter ammount: ");
         scanf("%lf", &amt);
         send(sock, &amt, sizeof(amt), 0);
+        memset(buffer, 0, sizeof(buffer));
+        
+      } else if (strcmp(buffer, "GET_AMMOUNT") == 0) {
+        double amt;
+        printf("Enter ammount: ");
+        scanf("%lf", &amt);
+        send(sock, &amt, sizeof(amt), 0);
+        printf("enter reciever account id: ");
+        choose(sock);
         memset(buffer, 0, sizeof(buffer));
 
       } else { break; }
