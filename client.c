@@ -6,11 +6,12 @@
 #define PORT 8080
 
 void login_customer(){
-  printf("1. view account info\n2. withdraw money\n3. Send money\n4. Exit\n");
+  printf("1. view account info\n2. withdraw money\n3. Deposit money\n 4.Send money\n5. Exit\n");
 }
 void customer_base(){
   printf("1. Create new account\n2. Login\n3. Exit\n");
 }
+
 void to_serv(int sock){
   char arg[100];
   scanf("%s", arg);
@@ -67,12 +68,14 @@ int main() {
         printf("Enter your choice: ");
         choose(sock);
         memset(buffer, 0, sizeof(buffer));
+      
       } else if (strcmp(buffer, "CREATE_USER") == 0) {
         printf("Enter name: ");
         to_serv(sock);
         printf("Enter password: ");
         to_serv(sock);
         memset(buffer, 0, sizeof(buffer));
+      
       } else if (strcmp(buffer, "LOGIN_CUST") == 0){
         printf("Enter account id: ");
         scanf("%d", &id);
@@ -80,6 +83,7 @@ int main() {
         printf("Enter password: ");
         to_serv(sock);
        memset(buffer, 0, sizeof(buffer));
+      
       } else if (strcmp(buffer, "LOGIN_SUCCESS") == 0){
         printf("logged in\n");
         login_customer();
@@ -87,10 +91,19 @@ int main() {
         int out = read(sock, buffer, 1024);;
         printf("%s", buffer);
         memset(buffer, 0, sizeof(buffer));
+      
       } else if (strcmp(buffer, "LOGIN_FAIL") == 0){
         printf("incorrect id or password\nTry again");
         memset(buffer, 0, sizeof(buffer));
-      }else { break; }
+      
+      } else if (strcmp(buffer, "GET_AMMOUNT") == 0) {
+        double amt;
+        printf("Enter ammount: ");
+        scanf("%lf", &amt);
+        send(sock, &amt, sizeof(amt), 0);
+        memset(buffer, 0, sizeof(buffer));
+
+      } else { break; }
     }
   memset(buffer, 0, sizeof(buffer));
   return 0;
