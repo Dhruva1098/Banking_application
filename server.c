@@ -6,13 +6,14 @@
 #include <pthread.h>
 
 #include "customer_handler.c"
+#include "employee_handler.c"
 #define PORT 8080
 
 void menu(int new_socket) {
     char buffer[1024] = {0};
     int choice;
 
-    strcpy(buffer, "Choose the type of access:\n1. Customer\n2. Administrator\n3. Bank Employee\n4. Manager\n");
+    strcpy(buffer, "Choose the type of access:\n1. Customer\n2. Bank Employee\n3. Manager\n4. Admin\n");
     send(new_socket, buffer, strlen(buffer), 1);
     memset(buffer, 0, sizeof(buffer));
     read(new_socket, &choice, sizeof(choice));
@@ -22,7 +23,8 @@ void menu(int new_socket) {
             handle_customer(new_socket);
             break;
         case 2:
-            strcpy(buffer, "Administrator access chosen\n");
+            send(new_socket, "EMPLOYEE_BASE", strlen("EMPLOYEE_BASE"), 0);
+            handle_employee(new_socket);
             break;
         case 3:
             strcpy(buffer, "Bank Employee access chosen\n");

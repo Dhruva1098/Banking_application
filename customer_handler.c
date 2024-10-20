@@ -167,10 +167,8 @@ void cust_logged_in(int ac, int new_socket){
       withdraw_money(ac2, amt*-1);
       memset(cust_buffer, 0, sizeof(cust_buffer));
       break;
-      
-
     default:
-      printf("nothing done");
+      strcpy(buffer, "Invalid choice\n");
       break;
   }
 }

@@ -11,7 +11,12 @@ void login_customer(){
 void customer_base(){
   printf("1. Create new account\n2. Login\n3. Exit\n");
 }
-
+void login_employee(){
+  printf("1. Modify customer detaile\n2. Process Loan Applications\n3. Approve Reject loans\n 4. View Assigned loans\n");
+}
+void employee_base(){
+  printf("1. Login\n2. Exit\n");
+}
 void to_serv(int sock){
   char arg[100];
   scanf("%s", arg);
@@ -111,6 +116,33 @@ int main() {
         choose(sock);
         memset(buffer, 0, sizeof(buffer));
 
+      } else if(strcmp(buffer, "EMPLOYEE_BASE") == 0) {
+        employee_base();
+        printf("Enter your choice: ");
+        choose(sock);
+        memset(buffer, 0, sizeof(buffer)); 
+    
+      } else if (strcmp(buffer, "LOGIN_SUCCESS_E") == 0){
+        printf("logged in\n");
+        login_employee();
+        choose(sock);
+        int out = read(sock, buffer, 1024);;
+        printf("%s", buffer);
+        memset(buffer, 0, sizeof(buffer));
+      
+      } else if (strcmp(buffer, "GET_NEW_DETAILS") == 0){
+        int ac;
+        const char* new_customer_name; const char* new_password; double new_bank_balance;
+        printf("enter account no:");
+        choose(sock);
+        printf("enter new customer name: ");
+        to_serv(sock);
+        printf("Enter new pasword: ");
+        to_serv(sock);
+        printf("enter new bank balance: ");
+        to_serv(sock);
+        memset(buffer, 0, sizeof(buffer));
+      
       } else { break; }
     }
   memset(buffer, 0, sizeof(buffer));
