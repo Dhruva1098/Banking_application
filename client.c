@@ -1,63 +1,97 @@
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
 #include <stdio.h>
-#include <errno.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <arpa/inet.h>
-#include <sys/socket.h>
-#include <netinet/ip.h>
+#define PORT 8080
 
-static void msg(const char *msg) {
-    fprintf(stderr, "%s\n", msg);
-    fflush(stderr);  // Force stderr to flush output
+void login_customer(){
+  printf("1. view account info\n2. withdraw money\n3. Send money\n4. Exit\n");
 }
-
-static void die(const char *msg) {
-    int err = errno;
-    fprintf(stderr, "[%d] %s\n", err, msg);
-    fflush(stderr);  // Force stderr to flush output
-    abort();
+void customer_base(){
+  printf("1. Create new account\n2. Login\n3. Exit\n");
+}
+void to_serv(int sock){
+  char arg[100];
+  scanf("%s", arg);
+  send(sock, arg, strlen(arg), 0);
+  memset(arg, 0, sizeof(arg));
+}
+void choose(int sock){
+  int choicet;
+  scanf("%d", &choicet);
+  send(sock, &choicet, sizeof(choicet), 0);
+  printf("choice sent to server\n");
 }
 
 int main() {
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd < 0) {
-        die("socket()");
+    struct sockaddr_in address;
+    int sock = 0, valread;
+    struct sockaddr_in serv_addr;
+    int choice = 0;
+    char buffer[1024] = {0};
+    char name[50];
+    char pass[50];
+    int id = 0;
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("\n Socket creation error \n");
+        return -1;
     }
-    struct sockaddr_in addr = {};
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(1234);  // Server port number
-    addr.sin_addr.s_addr = inet_addr("127.0.0.1");  // Server IP address (localhost)
-    int rv = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
-    if (rv < 0) {
-        die("connect()");
-    }
-    char response_buffer[1000] = {0};
-    char input_buffer[256] = {0};
-    while (1) {
-        ssize_t n = read(fd, response_buffer, sizeof(response_buffer) - 1);  // Read server message
-        if (n <= 0) {
-            msg("read() error or connection closed by server");
-            break;  // Exit if there's an error or server closes the connection
-        }
 
-        response_buffer[n] = '\0';  // Null-terminate the received message
-        printf("%s", response_buffer);  // Print the server message
-        fflush(stdout);
-        if(strstr(response_buffer, "Enter") || strstr(response_buffer, "choice")) {
-          printf("enter your input: ");
-          fflush(stdout);
-          if(fgets(input_buffer, sizeof(input_buffer), stdin) != NULL) {
-              input_buffer[strcspn(input_buffer, "\n")] = '\0';
-              if (write(fd, input_buffer, strlen(input_buffer)) < 0) {
-                msg("write() error");
-                break;
-              }
-          }
-        }
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+
+    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) {
+        printf("\nInvalid address/ Address not supported \n");
+        return -1;
     }
-    // Close the socket and exit
-    close(fd);
-    return 0;
+
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        printf("\nConnection Failed \n");
+        return -1;
+    }
+
+    printf("Client connected to server\n");
+    valread = read(sock, buffer, 1024);
+    printf("%s\n", buffer);
+    memset(buffer, 0, sizeof(buffer));
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
+    send(sock, &choice, sizeof(choice), 0);
+    printf("Choice sent to server\n");
+    memset(buffer, 0, sizeof(buffer));
+    while(1){
+      valread = read(sock, buffer, 1024);
+      if(strcmp(buffer, "CUSTOMER_BASE") == 0) {
+        customer_base();
+        printf("Enter your choice: ");
+        choose(sock);
+        memset(buffer, 0, sizeof(buffer));
+      } else if (strcmp(buffer, "CREATE_USER") == 0) {
+        printf("Enter name: ");
+        to_serv(sock);
+        printf("Enter password: ");
+        to_serv(sock);
+        memset(buffer, 0, sizeof(buffer));
+      } else if (strcmp(buffer, "LOGIN_CUST") == 0){
+        printf("Enter account id: ");
+        scanf("%d", &id);
+        send(sock, &id, sizeof(id), 0);
+        printf("Enter password: ");
+        to_serv(sock);
+       memset(buffer, 0, sizeof(buffer));
+      } else if (strcmp(buffer, "LOGIN_SUCCESS") == 0){
+        printf("logged in\n");
+        login_customer();
+        choose(sock);
+        int out = read(sock, buffer, 1024);;
+        printf("%s", buffer);
+        memset(buffer, 0, sizeof(buffer));
+      } else if (strcmp(buffer, "LOGIN_FAIL") == 0){
+        printf("incorrect id or password\nTry again");
+        memset(buffer, 0, sizeof(buffer));
+      }else { break; }
+    }
+  memset(buffer, 0, sizeof(buffer));
+  return 0;
 }
