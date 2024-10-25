@@ -6,7 +6,7 @@
 #define PORT 8080
 
 void login_customer(){
-  printf("1. view account info\n2. withdraw money\n3. Deposit money\n 4.Send money\n5. Exit\n");
+  printf("1. view account info\n2. withdraw money\n3. Deposit money\n 4.Send money\n5. Apply For Loan\n6.Exit");
 }
 void customer_base(){
   printf("1. Create new account\n2. Login\n3. Exit\n");
@@ -118,9 +118,16 @@ int main() {
         login_employee();
         choose(sock);
         int out = read(sock, buffer, 1024);;
-        printf("%s", buffer);
         memset(buffer, 0, sizeof(buffer));
-      
+
+      } else if (strcmp(buffer, "GET_LOAN_INFO") == 0){
+        printf("enter account id:");
+        choose(sock);
+        printf("enter loan ammount to apply for: ");
+        choose(sock);
+        printf("Applied for loan");
+        memset(buffer, 0, sizeof(buffer));
+     
       } else if (strcmp(buffer, "GET_NEW_DETAILS") == 0){
         int ac;
         const char* new_customer_name; const char* new_password; double new_bank_balance;

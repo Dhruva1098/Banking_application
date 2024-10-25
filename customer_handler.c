@@ -82,8 +82,34 @@ int get_customer_info(int account_id, char* buffer, size_t buffer_size) {
         }
     }
 
+
     fclose(file); // Close the file if customer is not found
     return 0; // Customer not found
+}
+void apply_loan(int account_id, double amount){
+  bool status = 0;
+  FILE* loan = fopen("../database/loan_db.txt", "a");
+  if(loan == NULL){
+    perror("open");
+  }
+  fprintf(loan, "%d,%.2f,%d\n", account_id, amount, status);
+  fclose(loan);
+  FILE* customer = fopen("../database/customer_db.txt", "r+");
+  if(customer == NULL) perror("open");
+  char line[256];
+  long position;
+  struct Customer customer_;
+  while(fgets(line, sizeof(line), customer)) {
+    position = ftell(customer);
+    sscanf(line, "%d,%49[^,],%49[^,],%lf,%19s", &customer_.account_id, customer_.password, customer_.customer_name, &customer_.bank_balance, customer_.loan_status);
+    if (customer_.account_id == account_id) {
+      strcpy(customer_.loan_status, "in process");
+      fseek(customer, position - strlen(line), SEEK_SET);
+      fprintf(customer, "%d,%s,%s,%.2f,%s\n", customer_.account_id, customer_.password, customer_.customer_name, customer_.bank_balance, customer_.loan_status);
+      fflush(customer);
+      break;
+    }
+  }
 }
 
 int withdraw_money(int account_id, double amount) {
@@ -167,6 +193,13 @@ void cust_logged_in(int ac, int new_socket){
       withdraw_money(ac2, amt*-1);
       memset(cust_buffer, 0, sizeof(cust_buffer));
       break;
+    case 5:
+      strcpy(cust_buffer, "GET_LOAN_INFO");
+      send(new_socket, cust_buffer, strlen(cust_buffer), 0);
+      read(new_socket, &ac2, sizeof(ac2));
+      read(new_socket, &amt, sizeof(amt));
+      apply_loan(ac2,amt);
+      memset(cust_buffer, 0 , sizeof(cust_buffer));
     default:
       strcpy(cust_buffer, "Invalid choice\n");
       break;
